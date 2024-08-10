@@ -141,6 +141,7 @@ class GL:
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
+
         # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
         # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
         # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
@@ -148,15 +149,43 @@ class GL:
         # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
         # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
-        print(
-            "TriangleSet2D : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
+        def l(p0: tuple, p1: tuple, x: int, y: int) -> int:
+            a = p1[1] - p0[1]
+            b = p1[0] - p0[0]
+            c = p0[1] * b - p0[0] * a
 
-        # Exemplo:
-        gpu.GPU.draw_pixel(
-            [6, 8], gpu.GPU.RGB8, [255, 255, 0]
-        )  # altera pixel (u, v, tipo, r, g, b)
+            return a * x - b * y + c
+
+        def inside(triangle: list[tuple], point: tuple) -> bool:
+            p0, p1, p2 = triangle[0], triangle[1], triangle[2]
+            funcs = {
+                "l1": lambda x, y: l(p0, p1, x, y),
+                "l2": lambda x, y: l(p1, p2, x, y),
+                "l3": lambda x, y: l(p2, p0, x, y),
+            }
+
+            for func in funcs.values():
+                if not func(point[0], point[1]) >= 0:
+                    return False
+
+            return True
+
+        def get_vertices(i):
+            return [vertices[j] for j in range(i, i + 6)]
+
+        for i in range(0, len(vertices), 6):
+            x1, y1, x2, y2, x3, y3 = get_vertices(i)
+            triangle = ((x1, y1), (x2, y2), (x3, y3))
+
+            for x in range(0, GL.width):
+                for y in range(0, GL.height):
+                    if inside(triangle, (x, y)):
+                        coordinates = [x, y]
+                        gpu.GPU.draw_pixel(
+                            coordinates,
+                            gpu.GPU.RGB8,
+                            GL.color_adapter(colors["emissiveColor"]),
+                        )
 
     @staticmethod
     def triangleSet(point, colors):

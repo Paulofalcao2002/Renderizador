@@ -35,6 +35,10 @@ class GL:
         GL.far = far
 
     @staticmethod
+    def color_adapter(color: Tuple[int]) -> List[int]:
+        return [c * 255 for c in color]
+
+    @staticmethod
     def polypoint2D(point, colors):
         """Função usada para renderizar Polypoint2D."""
         # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
@@ -45,18 +49,16 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
         # você pode assumir inicialmente o desenho dos pontos com a cor emissiva (emissiveColor).
 
-        def color_adapter(color: Tuple[int]) -> List[int]:
-            return [c * 255 for c in color]
-
         for x, y in zip(point[::2], point[1::2]):
             coordinates = [int(x % GL.width), int(y % GL.height)]
             gpu.GPU.draw_pixel(
-                coordinates, gpu.GPU.RGB8, color_adapter(colors["emissiveColor"])
+                coordinates, gpu.GPU.RGB8, GL.color_adapter(colors["emissiveColor"])
             )
 
     @staticmethod
     def polyline2D(lineSegments, colors):
         """Função usada para renderizar Polyline2D."""
+
         # Nessa função você receberá os pontos de uma linha no parâmetro lineSegments, esses
         # pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o valor da
         # coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto. Já point[2] é
@@ -66,21 +68,56 @@ class GL:
         # vira uma quantidade par de valores.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
         # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
+        def bresenham(x0, y0, x1, y1):
+            "Bresenham's line algorithm returning a list of points"
+            points = []
+            dx = abs(x1 - x0)
+            dy = abs(y1 - y0)
 
-        print(
-            "Polyline2D : lineSegments = {0}".format(lineSegments)
-        )  # imprime no terminal
-        print(
-            "Polyline2D : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
+            x, y = x0, y0
 
-        # Exemplo:
-        pos_x = GL.width // 2
-        pos_y = GL.height // 2
-        gpu.GPU.draw_pixel(
-            [pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 255]
-        )  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+            sx = -1 if x0 > x1 else 1
+            sy = -1 if y0 > y1 else 1
+
+            if dx > dy:
+                err = dx / 2.0
+                while x != x1:
+                    points.append((x, y))
+                    err -= dy
+                    if err < 0:
+                        y += sy
+                        err += dx
+                    x += sx
+            else:
+                err = dy / 2.0
+                while y != y1:
+                    points.append((x, y))
+                    err -= dx
+                    if err < 0:
+                        x += sx
+                        err += dy
+                    y += sy
+
+            points.append((x, y))
+            return points
+
+        for x1, y1, x2, y2 in zip(
+            lineSegments[::2],
+            lineSegments[1::2],
+            lineSegments[2::2],
+            lineSegments[3::2],
+        ):
+            points = bresenham(round(x1), round(y1), round(x2), round(y2))
+            for x, y in points:
+                x = 0 if x < 0 else GL.width - 1 if x > GL.width - 1 else x
+                y = 0 if y < 0 else GL.height - 1 if y > GL.height - 1 else y
+
+                coordinates = [x, y]
+                gpu.GPU.draw_pixel(
+                    coordinates,
+                    gpu.GPU.RGB8,
+                    GL.color_adapter(colors["emissiveColor"]),
+                )
 
     @staticmethod
     def circle2D(radius, colors):

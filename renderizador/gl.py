@@ -39,6 +39,10 @@ class GL:
         return [c * 255 for c in color]
 
     @staticmethod
+    def should_draw(x: int, y: int) -> bool:
+        return -1 < x < GL.width and -1 < y < GL.height
+
+    @staticmethod
     def polypoint2D(point, colors):
         """Função usada para renderizar Polypoint2D."""
         # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
@@ -50,10 +54,11 @@ class GL:
         # você pode assumir inicialmente o desenho dos pontos com a cor emissiva (emissiveColor).
 
         for x, y in zip(point[::2], point[1::2]):
-            coordinates = [int(x % GL.width), int(y % GL.height)]
-            gpu.GPU.draw_pixel(
-                coordinates, gpu.GPU.RGB8, GL.color_adapter(colors["emissiveColor"])
-            )
+            if GL.should_draw(x, y):
+                coordinates = [int(x), int(y)]
+                gpu.GPU.draw_pixel(
+                    coordinates, gpu.GPU.RGB8, GL.color_adapter(colors["emissiveColor"])
+                )
 
     @staticmethod
     def polyline2D(lineSegments, colors):
@@ -109,7 +114,7 @@ class GL:
         ):
             points = bresenham(int(x1), int(y1), int(x2), int(y2))
             for x, y in points:
-                if -1 < x < GL.width and -1 < y < GL.height:
+                if GL.should_draw(x, y):
                     coordinates = [x, y]
                     gpu.GPU.draw_pixel(
                         coordinates,
@@ -177,7 +182,7 @@ class GL:
 
             for x in range(0, GL.width):
                 for y in range(0, GL.height):
-                    if inside(triangle, (x, y)):
+                    if GL.should_draw(x, y) and inside(triangle, (x, y)):
                         coordinates = [x, y]
                         gpu.GPU.draw_pixel(
                             coordinates,

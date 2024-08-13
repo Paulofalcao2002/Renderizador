@@ -107,17 +107,15 @@ class GL:
             lineSegments[2::2],
             lineSegments[3::2],
         ):
-            points = bresenham(round(x1), round(y1), round(x2), round(y2))
+            points = bresenham(int(x1), int(y1), int(x2), int(y2))
             for x, y in points:
-                x = 0 if x < 0 else GL.width - 1 if x > GL.width - 1 else x
-                y = 0 if y < 0 else GL.height - 1 if y > GL.height - 1 else y
-
-                coordinates = [x, y]
-                gpu.GPU.draw_pixel(
-                    coordinates,
-                    gpu.GPU.RGB8,
-                    GL.color_adapter(colors["emissiveColor"]),
-                )
+                if -1 < x < GL.width and -1 < y < GL.height:
+                    coordinates = [x, y]
+                    gpu.GPU.draw_pixel(
+                        coordinates,
+                        gpu.GPU.RGB8,
+                        GL.color_adapter(colors["emissiveColor"]),
+                    )
 
     @staticmethod
     def circle2D(radius, colors):
@@ -175,7 +173,7 @@ class GL:
 
         for i in range(0, len(vertices), 6):
             x1, y1, x2, y2, x3, y3 = get_vertices(i)
-            triangle = ((x1, y1), (x2, y2), (x3, y3))
+            triangle = ((int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)))
 
             for x in range(0, GL.width):
                 for y in range(0, GL.height):
